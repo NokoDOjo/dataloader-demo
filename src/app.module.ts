@@ -3,17 +3,27 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import { join } from 'path';
 import { StudentModule } from './student/student.module';
-import { FriendModule } from './friend/friend.module';
+import { DataloaderModule } from './dataloader/dataloader.module';
+import { DataloaderService } from './dataloader/dataloader.service';
 
 @Module({
   imports: [
-    GraphQLModule.forRoot<ApolloDriverConfig>({
+    GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
-      autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
+      imports: [DataloaderModule],
+      useFactory: (dataloaderService: DataloaderService) => {
+        return {
+          autoSchemaFile: true,
+          context: () => ({
+            loaders: dataloaderService.getLoaders(),
+          }),
+        };
+      },
+      inject: [DataloaderService],
     }),
     StudentModule,
+    DataloaderModule,
   ],
   controllers: [AppController],
   providers: [AppService],
